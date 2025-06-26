@@ -1,0 +1,40 @@
+{
+  "excludedProperties": [],
+  "sourcePages": [
+    {
+      "propertyName": "customer",
+      "propertyValue": "Grant County",
+      "targetPage": "Grant County/Grant County",
+      "targetHeading": "# Associated Pages",
+      "enabled": true
+    },
+    {
+      "propertyName": "customer",
+      "propertyValue": "Northern Lights, Inc",
+      "targetPage": "Northern Lights, Inc/Projects/Northern Lights",
+      "targetHeading": "# Associated Pages",
+      "enabled": true
+    },
+    {
+      "propertyName": "customer",
+      "propertyValue": "Crawford County",
+      "targetPage": "Crawford County/Crawford County",
+      "targetHeading": "# Associated Pages",
+      "enabled": true
+    },
+    {
+      "propertyName": "project",
+      "propertyValue": "rp2009",
+      "targetPage": "ValleyCom/1. ValleyCom - RP2009 - Swissphone Paging",
+      "targetHeading": "# Associated Pages",
+      "enabled": true
+    },
+    {
+      "propertyName": "customer",
+      "propertyValue": "Latah County",
+      "targetPage": "Latah County/Latah County",
+      "targetHeading": "# Associated Pages",
+      "enabled": true
+    }
+  ]
+}

@@ -1,0 +1,425 @@
+/* Property Groups View Styles */
+.property-groups-container {
+  padding: 10px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.property-groups-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.property-groups-header h4 {
+  margin: 0;
+  font-weight: 600;
+}
+
+.property-groups-refresh {
+  padding: 4px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.property-groups-refresh:hover {
+  background: var(--background-modifier-hover);
+}
+
+.property-groups-refresh svg {
+  width: 16px;
+  height: 16px;
+}
+
+.property-groups-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.property-groups-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 20px;
+}
+
+/* Property Group Styles */
+.property-group {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.property-group-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.property-group-header:hover {
+  background: var(--background-modifier-hover);
+}
+
+.collapse-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.collapse-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.property-group-title {
+  font-weight: 500;
+  flex: 1;
+  font-family: var(--font-monospace);
+  color: var(--text-accent);
+}
+
+.property-group-count {
+  color: var(--text-muted);
+  font-size: 0.9em;
+  margin-left: 8px;
+}
+
+.property-values {
+  background: var(--background-primary);
+}
+
+.property-values.collapsed {
+  display: none;
+}
+
+/* Property Value Styles */
+.property-value {
+  border-bottom: 1px solid var(--background-modifier-border-focus);
+}
+
+.property-value:last-child {
+  border-bottom: none;
+}
+
+.property-value-header {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  margin-left: 20px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  background: var(--background-primary);
+}
+
+.property-value-header:hover {
+  background: var(--background-modifier-hover);
+}
+
+.property-value-title {
+  flex: 1;
+  color: var(--text-normal);
+  font-family: var(--font-monospace);
+  font-size: 0.9em;
+}
+
+.property-value-count {
+  color: var(--text-muted);
+  font-size: 0.85em;
+  margin-left: 8px;
+}
+
+.property-files {
+  background: var(--background-primary);
+}
+
+.property-files.collapsed {
+  display: none;
+}
+
+/* Property File Styles */
+.property-file {
+  display: block;
+  padding: 6px 12px;
+  margin-left: 60px;
+  cursor: pointer;
+  font-size: 0.9em;
+  color: var(--text-normal);
+  border-left: 2px solid transparent;
+  transition: all 0.15s ease;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.property-file:hover {
+  background: var(--background-modifier-hover);
+  border-left-color: var(--text-accent);
+  color: var(--text-accent);
+}
+
+/* Settings Table Styles */
+.property-source-table-container {
+  margin-top: 20px;
+}
+
+.property-source-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 0.9em;
+}
+
+.property-source-table th {
+  background: var(--background-secondary);
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid var(--background-modifier-border);
+  color: var(--text-normal);
+}
+
+.property-source-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--background-modifier-border-focus);
+  vertical-align: middle;
+}
+
+.property-source-table tr:last-child td {
+  border-bottom: none;
+}
+
+.property-source-table tr:hover {
+  background: var(--background-modifier-hover);
+}
+
+.status-indicator {
+  font-size: 1.2em;
+  font-weight: bold;
+  text-align: center;
+  width: 20px;
+}
+
+.status-indicator.enabled {
+  color: var(--color-green);
+}
+
+.status-indicator.disabled {
+  color: var(--text-muted);
+}
+
+.empty-value {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.actions-cell {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.actions-cell button {
+  margin: 0 2px;
+  padding: 4px 8px;
+  font-size: 0.8em;
+}
+
+/* Modal Styles */
+.modal-button-container {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  gap: 10px;
+}
+
+.modal-button-container button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  cursor: pointer;
+  flex: 1;
+}
+
+.modal-button-container button:hover {
+  background: var(--background-modifier-hover);
+}
+
+.modal-button-container button.mod-cta {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
+}
+
+.modal-button-container button.mod-cta:hover {
+  background: var(--interactive-accent-hover);
+}
+
+/* Autocomplete Suggestions */
+.suggestion-container,
+.property-suggestion-container {
+  position: absolute;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.suggestion-item,
+.property-suggestion-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--background-modifier-border-focus);
+  transition: background-color 0.15s ease;
+  color: var(--text-normal);
+}
+
+.suggestion-item:last-child,
+.property-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover,
+.property-suggestion-item:hover {
+  background: var(--background-modifier-hover);
+}
+
+/* Settings Styles - keeping original for backwards compatibility */
+.property-source-container {
+  margin-top: 20px;
+}
+
+.property-source-config {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 15px;
+  background: var(--background-secondary);
+}
+
+.property-source-config h4 {
+  margin: 0 0 15px 0;
+  color: var(--text-accent);
+  font-size: 1.1em;
+}
+
+.property-source-config hr {
+  border: none;
+  border-top: 1px solid var(--background-modifier-border);
+  margin: 15px 0 0 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 400px) {
+  .property-groups-container {
+    padding: 8px;
+  }
+  
+  .property-group-header {
+    padding: 6px 8px;
+  }
+  
+  .property-value-header {
+    padding: 6px 8px;
+    margin-left: 16px;
+  }
+  
+  .property-file {
+    padding: 4px 8px;
+    margin-left: 48px;
+  }
+
+  .property-source-table {
+    font-size: 0.8em;
+  }
+  
+  .property-source-table th,
+  .property-source-table td {
+    padding: 8px 4px;
+  }
+  
+  .actions-cell button {
+    padding: 2px 4px;
+    margin: 0 1px;
+  }
+}
+
+/* Bulk Property Management Styles */
+.bulk-property-container {
+  margin-top: 15px;
+  padding: 15px;
+  background: var(--background-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+}
+
+.bulk-property-container .setting-item {
+  border: none;
+  padding: 8px 0;
+}
+
+.bulk-property-container .setting-item:not(:last-child) {
+  border-bottom: 1px solid var(--background-modifier-border-focus);
+}
+
+.bulk-preview-list {
+  background: var(--background-primary);
+  font-family: var(--font-monospace);
+  font-size: 0.9em;
+}
+
+.bulk-preview-list div {
+  padding: 2px 0;
+  color: var(--text-muted);
+}
+
+
+
+/* Order Controls */
+.order-cell {
+  text-align: center;
+  white-space: nowrap;
+  padding: 6px 4px;
+}
+
+.order-btn {
+  padding: 2px 6px;
+  margin: 0 1px;
+  font-size: 0.9em;
+  font-weight: bold;
+  min-width: 22px;
+  border-radius: 3px;
+}
+
+.order-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.order-btn:not(:disabled):hover {
+  background: var(--background-modifier-hover);
+} 

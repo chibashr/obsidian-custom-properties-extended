@@ -1,0 +1,11 @@
+{
+	"id": "obsidian-custom-properties-extended",
+	"name": "Custom Properties Extended",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Group and manage custom properties with automatic linking to source pages",
+	"author": "chibashr",
+	"authorUrl": "",
+	"fundingUrl": "",
+	"isDesktopOnly": false
+} 
