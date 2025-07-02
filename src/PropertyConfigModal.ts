@@ -1,5 +1,5 @@
 import { Modal, App, Setting, TFile, Notice } from 'obsidian';
-import { PropertySourceConfig } from '../main';
+import { PropertySourceConfig, PropertyCondition } from '../main';
 import { PropertySuggest } from './PropertySuggest';
 
 export class PropertyConfigModal extends Modal {
@@ -10,6 +10,7 @@ export class PropertyConfigModal extends Modal {
 	private pageNames: string[];
 	private suggests: PropertySuggest[] = [];
 	private isNewConfig: boolean;
+	private conditionsContainer!: HTMLElement;
 
 	constructor(app: App, config: PropertySourceConfig, onSave: (config: PropertySourceConfig) => void) {
 		super(app);
@@ -18,7 +19,20 @@ export class PropertyConfigModal extends Modal {
 		this.propertyNames = [];
 		this.propertyValues = new Map();
 		this.pageNames = [];
-		this.isNewConfig = !config.propertyName && !config.propertyValue && !config.targetPage;
+		this.isNewConfig = !config.targetPage;
+		
+		// Ensure we have the new conditions format
+		if (!this.config.conditions && this.config.propertyName && this.config.propertyValue) {
+			this.config.conditions = [{
+				propertyName: this.config.propertyName,
+				propertyValue: this.config.propertyValue,
+				operator: 'equals'
+			}];
+			this.config.logicalOperator = 'AND';
+		} else if (!this.config.conditions) {
+			this.config.conditions = [];
+			this.config.logicalOperator = 'AND';
+		}
 		
 		this.loadAutoCompleteData();
 	}
@@ -39,54 +53,46 @@ export class PropertyConfigModal extends Modal {
 					this.config.enabled = value;
 				}));
 
-		// Property Name with autocomplete
-		new Setting(contentEl)
-			.setName('Property Name')
-			.setDesc('The name of the property to watch')
-			.addText(text => {
-				text.setPlaceholder('project')
-					.setValue(this.config.propertyName)
-					.onChange((value) => {
-						this.config.propertyName = value;
-					});
-				
-				// Add autocomplete functionality using PropertySuggest
-				const suggest = new PropertySuggest(
-					this.app,
-					text.inputEl,
-					() => this.propertyNames,
-					(value) => {
-						this.config.propertyName = value;
-					}
-				);
-				this.suggests.push(suggest);
-			});
+		// Property Conditions Section
+		contentEl.createEl('h3', { text: 'Property Conditions' });
+		contentEl.createEl('p', {
+			text: 'Define one or more property conditions that must be met for linking to occur.',
+			cls: 'setting-item-description'
+		});
 
-		// Property Value with autocomplete based on selected property
-		new Setting(contentEl)
-			.setName('Property Value')
-			.setDesc('The value of the property that triggers linking')
-			.addText(text => {
-				text.setPlaceholder('SO95067')
-					.setValue(this.config.propertyValue)
-					.onChange((value) => {
-						this.config.propertyValue = value;
+		// Logical operator for multiple conditions
+		if (this.config.conditions.length > 1 || !this.isNewConfig) {
+			new Setting(contentEl)
+				.setName('Logical Operator')
+				.setDesc('How to combine multiple conditions')
+				.addDropdown(dropdown => {
+					dropdown.addOption('AND', 'AND (all conditions must match)');
+					dropdown.addOption('OR', 'OR (any condition must match)');
+					dropdown.setValue(this.config.logicalOperator || 'AND');
+					dropdown.onChange((value) => {
+						this.config.logicalOperator = value as 'AND' | 'OR';
 					});
-				
-				// Add autocomplete for values of the selected property
-				const suggest = new PropertySuggest(
-					this.app,
-					text.inputEl,
-					() => {
-						const values = this.propertyValues.get(this.config.propertyName);
-						return values ? Array.from(values) : [];
-					},
-					(value) => {
-						this.config.propertyValue = value;
-					}
-				);
-				this.suggests.push(suggest);
-			});
+				});
+		}
+
+		// Container for conditions
+		this.conditionsContainer = contentEl.createDiv({ cls: 'conditions-container' });
+		this.renderConditions();
+
+		// Add condition button
+		new Setting(contentEl)
+			.setName('Add Condition')
+			.setDesc('Add a new property condition')
+			.addButton(button => button
+				.setButtonText('Add Condition')
+				.onClick(() => {
+					this.config.conditions.push({
+						propertyName: '',
+						propertyValue: '',
+						operator: 'equals'
+					});
+					this.renderConditions();
+				}));
 
 		// Target Page with autocomplete
 		new Setting(contentEl)
@@ -111,7 +117,7 @@ export class PropertyConfigModal extends Modal {
 				this.suggests.push(suggest);
 			});
 
-		// Target Heading with common heading suggestions
+		// Target Heading - removed autofill as requested
 		new Setting(contentEl)
 			.setName('Target Heading')
 			.setDesc('The heading under which links should be added (must include # prefix)')
@@ -121,34 +127,6 @@ export class PropertyConfigModal extends Modal {
 					.onChange((value) => {
 						this.config.targetHeading = value;
 					});
-				
-				// Add autocomplete for common headings with # prefixes
-				const commonHeadings = [
-					'# Associated Pages',
-					'# Related Files',
-					'# Linked Notes',
-					'# References',
-					'# Documents',
-					'# Notes',
-					'# Files',
-					'# Links',
-					'# Related Content',
-					'## Associated Pages',
-					'## Related Files',
-					'## References',
-					'### Associated Pages',
-					'### Related Files'
-				];
-				
-				const suggest = new PropertySuggest(
-					this.app,
-					text.inputEl,
-					() => commonHeadings,
-					(value) => {
-						this.config.targetHeading = value;
-					}
-				);
-				this.suggests.push(suggest);
 			});
 
 		// Buttons
@@ -166,16 +144,129 @@ export class PropertyConfigModal extends Modal {
 		};
 	}
 
+	private renderConditions() {
+		this.conditionsContainer.empty();
+
+		if (this.config.conditions.length === 0) {
+			// Add first condition if none exist
+			this.config.conditions.push({
+				propertyName: '',
+				propertyValue: '',
+				operator: 'equals'
+			});
+		}
+
+		this.config.conditions.forEach((condition, index) => {
+			const conditionDiv = this.conditionsContainer.createDiv({ cls: 'condition-row' });
+			conditionDiv.style.cssText = `
+				border: 1px solid var(--background-modifier-border);
+				border-radius: 8px;
+				padding: 15px;
+				margin-bottom: 10px;
+				background: var(--background-secondary);
+			`;
+
+			// Condition header
+			const header = conditionDiv.createDiv({ cls: 'condition-header' });
+			header.style.cssText = `
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 15px;
+			`;
+			
+			header.createEl('h4', { text: `Condition ${index + 1}` });
+
+			if (this.config.conditions.length > 1) {
+				const removeBtn = header.createEl('button', {
+					text: 'Remove',
+					cls: 'mod-small mod-warning'
+				});
+				removeBtn.onclick = () => {
+					this.config.conditions.splice(index, 1);
+					this.renderConditions();
+				};
+			}
+
+			// Property Name
+			new Setting(conditionDiv)
+				.setName('Property Name')
+				.setDesc('The name of the property to watch')
+				.addText(text => {
+					text.setPlaceholder('project')
+						.setValue(condition.propertyName)
+						.onChange((value) => {
+							condition.propertyName = value;
+						});
+					
+					const suggest = new PropertySuggest(
+						this.app,
+						text.inputEl,
+						() => this.propertyNames,
+						(value) => {
+							condition.propertyName = value;
+						}
+					);
+					this.suggests.push(suggest);
+				});
+
+			// Operator
+			new Setting(conditionDiv)
+				.setName('Operator')
+				.setDesc('How to match the property value')
+				.addDropdown(dropdown => {
+					dropdown.addOption('equals', 'Equals (exact match)');
+					dropdown.addOption('contains', 'Contains (partial match)');
+					dropdown.setValue(condition.operator);
+					dropdown.onChange((value) => {
+						condition.operator = value as 'equals' | 'contains';
+					});
+				});
+
+			// Property Value
+			new Setting(conditionDiv)
+				.setName('Property Value')
+				.setDesc('The value to match against')
+				.addText(text => {
+					text.setPlaceholder('SO95067')
+						.setValue(condition.propertyValue)
+						.onChange((value) => {
+							condition.propertyValue = value;
+						});
+					
+					const suggest = new PropertySuggest(
+						this.app,
+						text.inputEl,
+						() => {
+							const values = this.propertyValues.get(condition.propertyName);
+							return values ? Array.from(values) : [];
+						},
+						(value) => {
+							condition.propertyValue = value;
+						}
+					);
+					this.suggests.push(suggest);
+				});
+		});
+	}
+
 	private async handleSave() {
-		// Validate required fields
-		if (!this.config.propertyName.trim()) {
-			new Notice('Property name is required');
+		// Validate conditions
+		if (!this.config.conditions || this.config.conditions.length === 0) {
+			new Notice('At least one property condition is required');
 			return;
 		}
-		
-		if (!this.config.propertyValue.trim()) {
-			new Notice('Property value is required');
-			return;
+
+		for (let i = 0; i < this.config.conditions.length; i++) {
+			const condition = this.config.conditions[i];
+			if (!condition.propertyName.trim()) {
+				new Notice(`Property name is required for condition ${i + 1}`);
+				return;
+			}
+			if (!condition.propertyValue.trim()) {
+				new Notice(`Property value is required for condition ${i + 1}`);
+				return;
+			}
 		}
 		
 		if (!this.config.targetPage.trim()) {
@@ -249,7 +340,7 @@ export class PropertyConfigModal extends Modal {
 
 			for (const file of files) {
 				const cache = this.app.metadataCache.getFileCache(file);
-				if (cache?.frontmatter) {
+				if (cache?.frontmatter && this.config.propertyName && this.config.propertyValue) {
 					const propertyValue = cache.frontmatter[this.config.propertyName];
 					
 					// Use the same normalization logic as PropertySourceManager

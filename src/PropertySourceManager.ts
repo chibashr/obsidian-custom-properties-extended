@@ -1,5 +1,5 @@
 import { App, TFile, CachedMetadata, Notice } from 'obsidian';
-import { PropertyGroupsSettings, PropertySourceConfig } from '../main';
+import { PropertyGroupsSettings, PropertySourceConfig, PropertyCondition } from '../main';
 
 export class PropertySourceManager {
 	app: App;
@@ -62,21 +62,10 @@ export class PropertySourceManager {
 		for (const config of this.settings.sourcePages) {
 			if (!config.enabled) continue;
 
-			const propertyValue = frontmatter[config.propertyName];
+			// Check if this file matches the conditions
+			const matchesConditions = this.evaluateConditions(frontmatter, config);
 			
-			// Skip empty values
-			if (this.isEmptyValue(propertyValue)) {
-				await this.removeLinkFromSourcePage(file, config);
-				continue;
-			}
-
-			// Normalize the property value to handle arrays
-			const normalizedValues = this.normalizePropertyValue(propertyValue);
-			
-			// Check if any of the normalized values matches the config value
-			const hasMatchingValue = normalizedValues.includes(config.propertyValue);
-			
-			if (hasMatchingValue) {
+			if (matchesConditions) {
 				// Add link to source page
 				await this.addLinkToSourcePage(file, config);
 			} else {
@@ -86,12 +75,55 @@ export class PropertySourceManager {
 		}
 	}
 
+	private evaluateConditions(frontmatter: any, config: PropertySourceConfig): boolean {
+		// Support legacy format
+		if (config.propertyName && config.propertyValue && !config.conditions) {
+			const propertyValue = frontmatter[config.propertyName];
+			if (this.isEmptyValue(propertyValue)) return false;
+			
+			const normalizedValues = this.normalizePropertyValue(propertyValue);
+			return normalizedValues.includes(config.propertyValue);
+		}
+
+		// New format with multiple conditions
+		if (!config.conditions || config.conditions.length === 0) return false;
+
+		const results = config.conditions.map(condition => {
+			const propertyValue = frontmatter[condition.propertyName];
+			if (this.isEmptyValue(propertyValue)) return false;
+			
+			const normalizedValues = this.normalizePropertyValue(propertyValue);
+			
+			switch (condition.operator) {
+				case 'equals':
+					return normalizedValues.includes(condition.propertyValue);
+				case 'contains':
+					return normalizedValues.some(value => 
+						value.toLowerCase().includes(condition.propertyValue.toLowerCase())
+					);
+				default:
+					return false;
+			}
+		});
+
+		// Apply logical operator
+		return config.logicalOperator === 'OR' 
+			? results.some(result => result)
+			: results.every(result => result);
+	}
+
 	async handleFileDelete(file: TFile) {
 		await this.removeFileFromAllSourcePages(file);
 	}
 
 	async addLinkToSourcePage(file: TFile, config: PropertySourceConfig): Promise<void> {
-		const sourceFile = this.app.vault.getAbstractFileByPath(`${config.targetPage}.md`);
+		// Don't add the source page to its own associated pages
+		const targetPagePath = `${config.targetPage}.md`;
+		if (file.path === targetPagePath) {
+			return;
+		}
+
+		const sourceFile = this.app.vault.getAbstractFileByPath(targetPagePath);
 		
 		if (!sourceFile || !(sourceFile instanceof TFile)) {
 			// Create the source page if it doesn't exist

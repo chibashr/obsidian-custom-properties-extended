@@ -8,12 +8,21 @@ export interface PropertyGroupsSettings {
 	sourcePages: PropertySourceConfig[];
 }
 
-export interface PropertySourceConfig {
+export interface PropertyCondition {
 	propertyName: string;
 	propertyValue: string;
+	operator: 'equals' | 'contains'; // Future expansion: 'not_equals', 'starts_with', etc.
+}
+
+export interface PropertySourceConfig {
+	conditions: PropertyCondition[]; // Multiple property conditions
+	logicalOperator: 'AND' | 'OR'; // How to combine multiple conditions
 	targetPage: string;
 	targetHeading: string;
 	enabled: boolean;
+	// Legacy support - will be migrated
+	propertyName?: string;
+	propertyValue?: string;
 }
 
 const DEFAULT_SETTINGS: PropertyGroupsSettings = {
@@ -27,6 +36,9 @@ export default class PropertyGroupsPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+		
+		// Migrate legacy source pages if needed
+		this.migrateSourcePages();
 
 		// Initialize property source manager
 		this.propertySourceManager = new PropertySourceManager(this.app, this.settings);
@@ -86,6 +98,44 @@ export default class PropertyGroupsPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 		this.propertySourceManager.updateSettings(this.settings);
+	}
+
+	async manualResyncAllSourcePages() {
+		const notice = new Notice('Resyncing all source pages...', 0);
+		try {
+			await this.propertySourceManager.initializeAllSourcePages();
+			notice.hide();
+			new Notice('Manual resync completed successfully');
+		} catch (error) {
+			notice.hide();
+			console.error('Error during manual resync:', error);
+			new Notice('Error occurred during resync. Check console for details.');
+		}
+	}
+
+	// Migration method to convert legacy configs to new format
+	migrateSourcePages() {
+		let migrated = false;
+		this.settings.sourcePages = this.settings.sourcePages.map(config => {
+			if (config.propertyName && config.propertyValue && !config.conditions) {
+				migrated = true;
+				return {
+					...config,
+					conditions: [{
+						propertyName: config.propertyName,
+						propertyValue: config.propertyValue,
+						operator: 'equals' as const
+					}],
+					logicalOperator: 'AND' as const,
+					// Keep legacy fields for now to avoid breaking changes
+				};
+			}
+			return config;
+		});
+
+		if (migrated) {
+			this.saveSettings();
+		}
 	}
 
 	async activateView() {
@@ -192,8 +242,6 @@ export default class PropertyGroupsPlugin extends Plugin {
 
 		return propertyGroups;
 	}
-
-
 
 	async bulkReplacePropertyValue(propertyName: string, oldValue: string, newValue: string): Promise<number> {
 		const files = this.app.vault.getMarkdownFiles();
@@ -396,5 +444,4 @@ export default class PropertyGroupsPlugin extends Plugin {
 	private escapeRegex(string: string): string {
 		return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 	}
-
 } 

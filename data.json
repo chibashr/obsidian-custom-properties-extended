@@ -6,35 +6,105 @@
       "propertyValue": "Grant County",
       "targetPage": "Grant County/Grant County",
       "targetHeading": "# Associated Pages",
-      "enabled": true
+      "enabled": true,
+      "conditions": [
+        {
+          "propertyName": "customer",
+          "propertyValue": "Grant County",
+          "operator": "equals"
+        }
+      ],
+      "logicalOperator": "AND"
     },
     {
       "propertyName": "customer",
       "propertyValue": "Northern Lights, Inc",
-      "targetPage": "Northern Lights, Inc/Projects/Northern Lights",
+      "targetPage": "Northern Lights, Inc/Projects/RP2004 - Northern Lights",
       "targetHeading": "# Associated Pages",
-      "enabled": true
+      "enabled": true,
+      "conditions": [
+        {
+          "propertyName": "customer",
+          "propertyValue": "Northern Lights, Inc",
+          "operator": "equals"
+        }
+      ],
+      "logicalOperator": "AND"
     },
     {
       "propertyName": "customer",
       "propertyValue": "Crawford County",
       "targetPage": "Crawford County/Crawford County",
       "targetHeading": "# Associated Pages",
-      "enabled": true
-    },
-    {
-      "propertyName": "project",
-      "propertyValue": "rp2009",
-      "targetPage": "ValleyCom/1. ValleyCom - RP2009 - Swissphone Paging",
-      "targetHeading": "# Associated Pages",
-      "enabled": true
+      "enabled": true,
+      "conditions": [
+        {
+          "propertyName": "customer",
+          "propertyValue": "Crawford County",
+          "operator": "equals"
+        }
+      ],
+      "logicalOperator": "AND"
     },
     {
       "propertyName": "customer",
       "propertyValue": "Latah County",
       "targetPage": "Latah County/Latah County",
       "targetHeading": "# Associated Pages",
-      "enabled": true
+      "enabled": true,
+      "conditions": [
+        {
+          "propertyName": "customer",
+          "propertyValue": "Latah County",
+          "operator": "equals"
+        }
+      ],
+      "logicalOperator": "AND"
+    },
+    {
+      "propertyName": "project",
+      "propertyValue": "RP2008 - Davis County",
+      "targetPage": "Davis County/Davis Co IA Project RP2008",
+      "targetHeading": "# Associated Pages",
+      "enabled": true,
+      "conditions": [
+        {
+          "propertyName": "project",
+          "propertyValue": "RP2008 - Davis County",
+          "operator": "equals"
+        }
+      ],
+      "logicalOperator": "AND"
+    },
+    {
+      "propertyName": "project",
+      "propertyValue": "RP2009 - ValleyCom",
+      "targetPage": "ValleyCom/RP2009 - ValleyCom - Swissphone Paging",
+      "targetHeading": "# Associated Pages",
+      "enabled": true,
+      "conditions": [
+        {
+          "propertyName": "project",
+          "propertyValue": "RP2009 - ValleyCom",
+          "operator": "equals"
+        }
+      ],
+      "logicalOperator": "AND"
+    },
+    {
+      "propertyName": "project",
+      "propertyValue": "SO95697 - Langlade County",
+      "targetPage": "SO95697 - Langlade County - Langlade County Sheriff",
+      "targetHeading": "# Associated Pages",
+      "enabled": true,
+      "conditions": [
+        {
+          "propertyName": "project",
+          "propertyValue": "SO95697 - Langlade County",
+          "operator": "equals"
+        }
+      ],
+      "logicalOperator": "AND"
     }
   ]
 }

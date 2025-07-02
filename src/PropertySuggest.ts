@@ -9,6 +9,7 @@ export class PropertySuggest {
 	private isOpen: boolean = false;
 	private onSelect: (value: string) => void;
 	private getSuggestions: () => string[];
+	private documentClickHandler!: (e: Event) => void;
 
 	constructor(app: App, inputEl: HTMLInputElement, getSuggestions: () => string[], onSelect: (value: string) => void) {
 		this.app = app;
@@ -68,21 +69,49 @@ export class PropertySuggest {
 				case 'Escape':
 					this.closeSuggestions();
 					break;
+				case 'Tab':
+					// Close suggestions on tab to allow normal form navigation
+					this.closeSuggestions();
+					break;
 			}
 		});
 
-		this.inputEl.addEventListener('blur', () => {
-			// Delay closing to allow for click events
-			setTimeout(() => this.closeSuggestions(), 300);
+		this.inputEl.addEventListener('blur', (e) => {
+			// Check if focus is moving to a suggestion item
+			const relatedTarget = e.relatedTarget as HTMLElement;
+			if (relatedTarget && this.suggestEl.contains(relatedTarget)) {
+				return; // Don't close if clicking on a suggestion
+			}
+			
+			// Delay closing slightly to allow for click events
+			setTimeout(() => {
+				// Check again if focus returned to input or moved to suggestion
+				if (document.activeElement !== this.inputEl && 
+					!this.suggestEl.contains(document.activeElement as HTMLElement)) {
+					this.closeSuggestions();
+				}
+			}, 150);
 		});
 
 		this.inputEl.addEventListener('focus', () => {
-			if (this.inputEl.value) {
-				this.updateSuggestions(this.inputEl.value);
-			} else {
-				this.showAllSuggestions();
-			}
+			// Small delay to allow the suggestion container to be positioned correctly
+			setTimeout(() => {
+				if (this.inputEl.value) {
+					this.updateSuggestions(this.inputEl.value);
+				} else {
+					this.showAllSuggestions();
+				}
+			}, 50);
 		});
+
+		// Close suggestions when clicking outside
+		this.documentClickHandler = (e: Event) => {
+			if (!this.inputEl.contains(e.target as Node) && 
+				!this.suggestEl.contains(e.target as Node)) {
+				this.closeSuggestions();
+			}
+		};
+		document.addEventListener('click', this.documentClickHandler);
 	}
 
 	private updateSuggestions(query: string): void {
@@ -130,27 +159,49 @@ export class PropertySuggest {
 				padding: 8px 12px;
 				cursor: pointer;
 				border-bottom: 1px solid var(--background-modifier-border);
-				transition: background-color 0.15s ease;
+				transition: background-color 0.1s ease;
+				user-select: none;
 				${index === this.selectedIndex ? 'background: var(--background-modifier-hover);' : ''}
 			`;
 
 			suggestionEl.textContent = suggestion;
 			suggestionEl.style.color = 'var(--text-normal)';
+			suggestionEl.setAttribute('tabindex', '-1'); // Make focusable but not tab-reachable
 
-			// Prevent default and stop propagation to avoid blur issues
+			// Improve click responsiveness
 			suggestionEl.addEventListener('mousedown', (e) => {
-				e.preventDefault();
+				e.preventDefault(); // Prevent input blur
+				e.stopPropagation();
 			});
 
-			suggestionEl.addEventListener('click', (e) => {
+			suggestionEl.addEventListener('mouseup', (e) => {
 				e.preventDefault();
 				e.stopPropagation();
 				this.selectSuggestion(suggestion);
 			});
 
+			// Handle touch events for better mobile support
+			suggestionEl.addEventListener('touchstart', (e) => {
+				e.preventDefault();
+			});
+
+			suggestionEl.addEventListener('touchend', (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				this.selectSuggestion(suggestion);
+			});
+
+			// Visual feedback on hover
 			suggestionEl.addEventListener('mouseenter', () => {
 				this.selectedIndex = index;
-				this.renderSuggestions();
+				// Update only the visual state without full re-render for better performance
+				this.updateSelectionVisual();
+			});
+
+			suggestionEl.addEventListener('mouseleave', () => {
+				// Reset selection when leaving with mouse
+				this.selectedIndex = -1;
+				this.updateSelectionVisual();
 			});
 		});
 
@@ -167,6 +218,20 @@ export class PropertySuggest {
 		this.suggestEl.style.top = `${rect.bottom - parentRect.top + 4}px`;
 		this.suggestEl.style.left = `${rect.left - parentRect.left}px`;
 		this.suggestEl.style.width = `${rect.width}px`;
+	}
+
+	private updateSelectionVisual(): void {
+		if (!this.isOpen) return;
+		
+		const items = this.suggestEl.querySelectorAll('.property-suggestion-item');
+		items.forEach((item, index) => {
+			const htmlItem = item as HTMLElement;
+			if (index === this.selectedIndex) {
+				htmlItem.style.background = 'var(--background-modifier-hover)';
+			} else {
+				htmlItem.style.background = '';
+			}
+		});
 	}
 
 	private selectSuggestion(suggestion: string): void {
@@ -192,6 +257,12 @@ export class PropertySuggest {
 	}
 
 	destroy(): void {
+		this.closeSuggestions();
+		
+		// Remove global event listener
+		document.removeEventListener('click', this.documentClickHandler);
+		
+		// Remove suggestion container
 		if (this.suggestEl && this.suggestEl.parentElement) {
 			this.suggestEl.parentElement.removeChild(this.suggestEl);
 		}

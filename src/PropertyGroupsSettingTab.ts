@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting, Notice, Modal } from 'obsidian';
-import PropertyGroupsPlugin, { PropertySourceConfig } from '../main';
+import PropertyGroupsPlugin, { PropertySourceConfig, PropertyCondition } from '../main';
 import { PropertyConfigModal } from './PropertyConfigModal';
 
 export class PropertyGroupsSettingTab extends PluginSettingTab {
@@ -54,16 +54,27 @@ export class PropertyGroupsSettingTab extends PluginSettingTab {
 				.setCta()
 				.onClick(() => {
 					this.openConfigModal({
-						propertyName: '',
-						propertyValue: '',
+						conditions: [],
+						logicalOperator: 'AND',
 						targetPage: '',
-						targetHeading: 'Associated Pages',
+						targetHeading: '# Associated Pages',
 						enabled: true
 					}, (config) => {
 						this.plugin.settings.sourcePages.push(config);
 						this.plugin.saveSettings();
 						this.renderSourcePagesTable();
 					});
+				}));
+
+		// Manual resync button
+		new Setting(containerEl)
+			.setName('Manual Resync')
+			.setDesc('Manually resync all source pages according to current rules')
+			.addButton(button => button
+				.setButtonText('Resync All')
+				.setWarning()
+				.onClick(async () => {
+					await this.plugin.manualResyncAllSourcePages();
 				}));
 
 		// Container for the configurations table
@@ -171,8 +182,7 @@ export class PropertyGroupsSettingTab extends PluginSettingTab {
 		const headerRow = thead.createEl('tr');
 		headerRow.createEl('th', { text: 'Order' });
 		headerRow.createEl('th', { text: 'Status' });
-		headerRow.createEl('th', { text: 'Property' });
-		headerRow.createEl('th', { text: 'Value' });
+		headerRow.createEl('th', { text: 'Conditions' });
 		headerRow.createEl('th', { text: 'Target Page' });
 		headerRow.createEl('th', { text: 'Heading' });
 		headerRow.createEl('th', { text: 'Actions' });
@@ -227,23 +237,35 @@ export class PropertyGroupsSettingTab extends PluginSettingTab {
 			});
 			statusIndicator.title = config.enabled ? 'Enabled' : 'Disabled';
 
-			// Property Name
-			row.createEl('td', { 
-				text: config.propertyName || '(empty)',
-				cls: config.propertyName ? '' : 'empty-value'
-			});
+			// Conditions
+			const conditionsCell = row.createEl('td');
+			const conditionsText = this.formatConditionsText(config);
+			if (conditionsText) {
+				conditionsCell.textContent = conditionsText;
+			} else {
+				conditionsCell.textContent = '(no conditions)';
+				conditionsCell.classList.add('empty-value');
+			}
 
-			// Property Value
-			row.createEl('td', { 
-				text: config.propertyValue || '(empty)',
-				cls: config.propertyValue ? '' : 'empty-value'
-			});
-
-			// Target Page
-			row.createEl('td', { 
-				text: config.targetPage || '(empty)',
-				cls: config.targetPage ? '' : 'empty-value'
-			});
+			// Target Page - make it clickable
+			const targetPageCell = row.createEl('td');
+			if (config.targetPage) {
+				const targetPageLink = targetPageCell.createEl('a', {
+					text: config.targetPage,
+					href: '#'
+				});
+				targetPageLink.style.cursor = 'pointer';
+				targetPageLink.style.color = 'var(--text-accent)';
+				targetPageLink.style.textDecoration = 'underline';
+				
+				targetPageLink.onclick = (e) => {
+					e.preventDefault();
+					this.navigateToTargetPage(config.targetPage, config.targetHeading);
+				};
+			} else {
+				targetPageCell.textContent = '(empty)';
+				targetPageCell.classList.add('empty-value');
+			}
 
 			// Target Heading
 			row.createEl('td', { 
@@ -441,5 +463,76 @@ export class PropertyGroupsSettingTab extends PluginSettingTab {
 			console.error('Error during bulk property replacement:', error);
 			new Notice('Error occurred during bulk replacement. Check console for details.');
 		}
+	}
+
+	private formatConditionsText(config: PropertySourceConfig): string {
+		// Support legacy format
+		if (config.propertyName && config.propertyValue && !config.conditions) {
+			return `${config.propertyName} = "${config.propertyValue}"`;
+		}
+
+		// New format
+		if (!config.conditions || config.conditions.length === 0) {
+			return '';
+		}
+
+		const conditionTexts = config.conditions.map(condition => {
+			const operator = condition.operator === 'equals' ? '=' : '~';
+			return `${condition.propertyName} ${operator} "${condition.propertyValue}"`;
+		});
+
+		if (conditionTexts.length === 1) {
+			return conditionTexts[0];
+		}
+
+		const operator = config.logicalOperator || 'AND';
+		return conditionTexts.join(` ${operator} `);
+	}
+
+	private async navigateToTargetPage(targetPage: string, targetHeading?: string) {
+		try {
+			const targetFile = this.app.vault.getAbstractFileByPath(`${targetPage}.md`);
+			
+			if (!targetFile) {
+				new Notice(`Target page "${targetPage}" not found`);
+				return;
+			}
+
+			// Open the file
+			const leaf = this.app.workspace.getUnpinnedLeaf();
+			await leaf.openFile(targetFile as any);
+
+			// If there's a target heading, try to navigate to it
+			if (targetHeading && targetHeading.trim()) {
+				// Small delay to ensure the file is loaded
+				setTimeout(() => {
+					const view = leaf.view as any;
+					if (view && view.editor) {
+						const content = view.editor.getValue();
+						const lines = content.split('\n');
+						
+						// Find the heading
+						const headingText = targetHeading.replace(/^#+\s*/, '');
+						const headingPattern = new RegExp(`^#+\\s+${this.escapeRegex(headingText)}\\s*$`);
+						
+						for (let i = 0; i < lines.length; i++) {
+							if (headingPattern.test(lines[i])) {
+								// Navigate to the line
+								view.editor.setCursor({ line: i, ch: 0 });
+								view.editor.scrollIntoView({ from: { line: i, ch: 0 }, to: { line: i, ch: 0 } });
+								break;
+							}
+						}
+					}
+				}, 100);
+			}
+		} catch (error) {
+			console.error('Error navigating to target page:', error);
+			new Notice('Failed to navigate to target page');
+		}
+	}
+
+	private escapeRegex(string: string): string {
+		return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 	}
 } 
